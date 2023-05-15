@@ -1,0 +1,85 @@
+---
+- hosts: default
+  become_user: root
+  become_method: sudo
+
+  tasks:
+
+  # Set up prereqs
+  # Essentially, first install prereqs needed for Python and rbenv
+  # then build Ruby 3.0.6 into rbenv, and install it as an option
+
+  #- name: Disable firewall for guest VM
+  #  command: 'ufw disable'
+  #  become: yes
+
+  - name: Install prerequisites
+    apt:
+      name: '{{ packages }}'
+      state: latest
+      update_cache: yes
+    vars:
+      packages:
+        - git
+        - python3.10-venv
+        - make
+        - gcc
+        - autoconf
+        - patch
+        - build-essential
+        - rustc
+        - libssl-dev
+        - libyaml-dev
+        - libreadline6-dev
+        - zlib1g-dev
+        - libgmp-dev
+        - libncurses5-dev
+        - libffi-dev
+        - libgdbm6
+        - libgdbm-dev
+        - libdb-dev
+        - uuid-dev
+    become: yes
+
+  - name: Install rbenv
+    shell: 'curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash'
+
+  - name: Add rbenv initialisation to .bashrc
+    lineinfile:
+      dest: '/home/vagrant/.bashrc'
+      line: '{{ item }}'
+    loop:
+      - '# Ensure rbenv initialised'
+      - 'eval "$(/home/vagrant/.rbenv/bin/rbenv init - bash)"'
+
+  - name: Build and set up Ruby 3.0.6, skip if exists
+    shell: |
+      eval "$(/home/vagrant/.rbenv/bin/rbenv init - bash)"
+      rbenv install 3.0.6 -s
+
+  # Set up local build environment for SRSG training infrastructure
+  # DiRAC repo given as an example
+  # TODO: parameterise repo URL
+  
+  - name: Clone training materials repo
+    git:
+      repo: 'https://github.com/Southampton-RSG-Training/dirac-intro-to-mpi'
+      dest: '/home/vagrant/dirac-intro-to-mpi'
+      accept_hostkey: yes
+      force: yes
+
+  - name: Set up Python venv with material build prereqs
+    pip:
+      requirements: /home/vagrant/dirac-intro-to-mpi/requirements.txt
+      virtualenv: /home/vagrant/dirac-intro-to-mpi/venv
+      virtualenv_command: 'python3 -m venv'
+
+  - name: Configure Ruby 3.0.6 for this material
+    shell: |
+      eval "$(/home/vagrant/.rbenv/bin/rbenv init - bash)"
+      rbenv local 3.0.6
+      gem install bundler
+      bundle install
+    args:
+      chdir: /home/vagrant/dirac-intro-to-mpi
+
