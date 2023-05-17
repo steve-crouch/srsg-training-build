@@ -5,6 +5,12 @@
 
   tasks:
 
+  - name: Set config
+    include_vars: config.yml
+
+  - name: Extract
+    set_fact: repo_dir="{{ training_repo_url|regex_replace('^(.*)/(.*)$', '\\2') }}"
+
   # Set up prereqs
   # Essentially, first install prereqs needed for Python and rbenv
   # then build Ruby 3.0.6 into rbenv, and install it as an option
@@ -63,15 +69,15 @@
   
   - name: Clone training materials repo
     git:
-      repo: 'https://github.com/Southampton-RSG-Training/dirac-intro-to-mpi'
-      dest: '/home/vagrant/dirac-intro-to-mpi'
+      repo: '{{ training_repo_url }}'
+      dest: '/home/vagrant/{{ repo_dir }}'
       accept_hostkey: yes
       force: yes
 
   - name: Set up Python venv with material build prereqs
     pip:
-      requirements: /home/vagrant/dirac-intro-to-mpi/requirements.txt
-      virtualenv: /home/vagrant/dirac-intro-to-mpi/venv
+      requirements: '/home/vagrant/{{ repo_dir }}/requirements.txt'
+      virtualenv: '/home/vagrant/{{ repo_dir }}/venv'
       virtualenv_command: 'python3 -m venv'
 
   - name: Configure Ruby 3.0.6 for this material
@@ -81,5 +87,5 @@
       gem install bundler
       bundle install
     args:
-      chdir: /home/vagrant/dirac-intro-to-mpi
+      chdir: '/home/vagrant/{{ repo_dir }}'
 
