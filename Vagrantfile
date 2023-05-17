@@ -20,12 +20,12 @@ Vagrant.configure("2") do |config|
   # via 127.0.0.1 to disable public access
   #config.vm.network "forwarded_port", guest: 80, host: 7080, host_ip: "127.0.0.1"
   #config.vm.network "forwarded_port", guest: 443, host: 7443, host_ip: "127.0.0.1"
-  config.vm.network "forwarded_port", guest: 4000, host: 8500, host_ip: "127.0.0.1"
+  config.vm.network "forwarded_port", guest: 4000, host: 4000, host_ip: "127.0.0.1"
 
   # Provision VM using Ansible playbook
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "playbook.yml"
-    ansible.verbose = "v"
+    #ansible.verbose = "v"
     #ansible.start_at_task = "Configure Ruby 3.0.6 for this material"
   end
 end
